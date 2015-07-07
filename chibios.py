@@ -19,10 +19,14 @@ class ChibiThread(object):
     ChibiThread.next_lwp += 1
     self._update()
 
-  def _update_frame(self, fr):
-    sal = fr.find_sal()
-    self.frame_str = "0x%X in %s () at %s:%d" % (fr.pc(), fr.function(),
-                                                 sal.symtab, sal.line)
+  def _update_frame(self):
+    # We used to do set_cpu_regs() here and then get a gdb.Frame, but that's
+    # really slow.  We don't care too much about the detail here, so just
+    # lookup the function name.
+    self.block = gdb.block_for_pc(self.regs[15])
+    while self.block.function is None:
+      self.block = self.block.superblock
+    self.frame_str = "0x%X in %s ()" % (self.regs[15], self.block.function)
 
   def _update(self):
     # Update name in case it changed
@@ -30,8 +34,7 @@ class ChibiThread(object):
     self.regs = list(reg_cache) # Make a copy of the list
     if self.tp == currp:
       self.active = True
-      set_cpu_regs(reg_cache)
-      self._update_frame(gdb.newest_frame())
+      self._update_frame()
       return
 
     self.active = False
@@ -41,12 +44,10 @@ class ChibiThread(object):
     self.regs[15] = int(r13['lr'].cast(longtype))
     for i in range(4, 12):
       self.regs[i] = int(r13['r%d'%i].cast(longtype))
+    self._update_frame()
     # Attempt the nasty unwind out of _port_switch_from_isr
-    # get function for pc 
-    block = gdb.block_for_pc(self.regs[15])
-    while block.function is None:
-      block = block.superblock
-    if str(block.function) == "_port_switch_from_isr":
+    # get function for pc
+    if str(self.block.function) == "_port_switch_from_isr":
       #if here pop exception frame from stack...
       ex_struct = "<8L"
       stack = gdb.selected_inferior().read_memory(self.regs[13],
@@ -58,8 +59,7 @@ class ChibiThread(object):
       self.regs[16] = stack[7]
       # TODO check for extended/standard frame
       self.regs[13] += 0x68 # size of extended frame
-    set_cpu_regs(self.regs)
-    self._update_frame(gdb.newest_frame())
+    self._update_frame()
 
 def get_cpu_regs():
   """Return the current state of general purpose registers"""
@@ -124,7 +124,7 @@ def stop_handler(event=None):
     if str(t) not in old_thread_set:
       ct = ChibiThread(t)
       thread_cache.append(ct)
-      print "[New thread '%s'] %s" % (ct.name, str(ct.tp))
+      print "[New thread '%s']" % ct.name
   set_cpu_regs(reg_cache)
 
 gdb.events.stop.connect(stop_handler)
