@@ -53,13 +53,14 @@ class ChibiThread(object):
       stack = gdb.selected_inferior().read_memory(self.regs[13],
                                                   struct.calcsize(ex_struct))
       stack = struct.unpack(ex_struct, stack)
-      self.regs[:5] = stack[:5]
+      self.regs[:4] = stack[:4]
+      self.regs[12] = stack[4]
       self.regs[14] = stack[5]
       self.regs[15] = stack[6]
       self.regs[16] = stack[7]
       # TODO check for extended/standard frame
       self.regs[13] += 0x68 # size of extended frame
-    self._update_frame()
+      self._update_frame()
 
 def get_cpu_regs():
   """Return the current state of general purpose registers"""
@@ -196,5 +197,9 @@ class CommandThread(gdb.Command):
 
 cmd_thread = CommandThread()
 
-stop_handler()
+try:
+  # Don't cry if this fails...
+  stop_handler()
+except:
+  pass
 
