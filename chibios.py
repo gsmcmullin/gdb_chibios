@@ -23,7 +23,12 @@ class ChibiThread(object):
     # We used to do set_cpu_regs() here and then get a gdb.Frame, but that's
     # really slow.  We don't care too much about the detail here, so just
     # lookup the function name.
-    self.block = gdb.block_for_pc(self.regs[15])
+    try:
+      self.block = gdb.block_for_pc(self.regs[15])
+    except:
+      class FakeBlock(object): pass
+      self.block = FakeBlock()
+      self.block.function = "??"
     while self.block.function is None:
       self.block = self.block.superblock
     self.frame_str = "0x%X in %s ()" % (self.regs[15], self.block.function)
