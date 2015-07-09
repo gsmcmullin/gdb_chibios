@@ -31,7 +31,7 @@ class CommandGCore(gdb.Command):
   def invoke(self, arg='', from_tty=False, sig=SIGINT):
     # Iterate over each ChibiOS thread and add a PRSTATUS note descriptor
     # for the general-purposes registers.
-    notes = ''
+    notes = b''
     for t in chibios.thread_cache:
       prstatus = corefile.ARM_prstatus()
       if t.active: # Only set signal for the running thread
@@ -58,8 +58,8 @@ class CommandGCore(gdb.Command):
 
     fn = arg if arg else gcore_file_name.value
     fn += "-" + time.strftime("%y%m%d-%H%M%S")
-    core.dump(open(fn, "w"))
-    print "(core dumped to %r)" % fn
+    core.dump(open(fn, "wb"))
+    print("(core dumped to %r)" % fn)
 
 gcore = CommandGCore()
 

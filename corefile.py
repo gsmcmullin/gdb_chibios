@@ -162,11 +162,11 @@ def note_desc(name, type, desc):
   """Conveninece function to format a note descriptor.
      All note descriptors must be concatenated and added to a
      PT_NOTE segment."""
-  name += '\0'
+  name = bytearray(name, encoding='ascii') + b'\0'
   header = struct.pack("<LLL", len(name), len(desc), type)
   # pad up to 4 byte alignment
-  name += ((4 - len(name)) % 4) * '\0'
-  desc += ((4 - len(desc)) % 4) * '\0'
+  name += ((4 - len(name)) % 4) * b'\0'
+  desc += ((4 - len(desc)) % 4) * b'\0'
   return header + name + desc
 
 if __name__ == "__main__":

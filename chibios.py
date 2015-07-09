@@ -82,7 +82,7 @@ def set_cpu_regs(regs):
   try:
     gdb.execute("set $xpsr = %d" % regs[16])
   except:
-    print "Failed to set xpsr"
+    print("Failed to set xpsr")
 
   # Write stack pointer from $sp to $psp or $msp for it to take effect
   if regs[16] & 0xff:
@@ -125,7 +125,7 @@ def stop_handler(event=None):
     if str(t) not in old_thread_set:
       ct = ChibiThread(t)
       thread_cache.append(ct)
-      print "[New thread '%s']" % ct.name
+      print("[New thread '%s']" % ct.name)
   set_cpu_regs(reg_cache)
 
 gdb.events.stop.connect(stop_handler)
@@ -159,11 +159,11 @@ class CommandInfoThreads(gdb.Command):
     super(CommandInfoThreads, self).__init__('info threads', gdb.COMMAND_USER)
 
   def invoke(self, arg, from_tty=False):
-    print "  Id   Target Id            Frame"
+    print("  Id   Target Id            Frame")
     for i in range(len(thread_cache)):
-      print "%c %-4d %-20s %s" % ('*' if thread_cache[i].active else ' ',
+      print("%c %-4d %-20s %s" % ('*' if thread_cache[i].active else ' ',
                  thread_cache[i].lwp, thread_cache[i].name,
-                 thread_cache[i].frame_str)
+                 thread_cache[i].frame_str))
 cmd_info_threads = CommandInfoThreads()
 
 class CommandThread(gdb.Command):
@@ -176,7 +176,7 @@ class CommandThread(gdb.Command):
     if not arg:
       for thread in thread_cache:
         if thread.active:
-          print '[Current thread is %d (%s)]' % (thread.lwp, thread.name)
+          print('[Current thread is %d (%s)]' % (thread.lwp, thread.name))
           return
 
     old_lwp = 0
@@ -190,7 +190,7 @@ class CommandThread(gdb.Command):
         old_lwp = thread.lwp
         thread.active = False
     if not found:
-      print "Thread ID %d not known." % int(arg)
+      print("Thread ID %d not known." % int(arg))
       for thread in thread_cache:
         if thread.lwp == old_lwp:
           thread.active = True
