@@ -116,15 +116,20 @@ def stop_handler(event=None):
     return
 
   # Update our list of ChibiOS threads from target
-  tmp_thread_list = [gdb.parse_and_eval('rlist.r_newer')]
-  while True:
-    tp = tmp_thread_list[-1].dereference()['p_newer']
-    if (tp == tmp_thread_list[0]) or (tp.dereference()['p_ctx']['r13'] == 0):
-      break
-    tmp_thread_list.append(tp)
-  # Announce dead threads
-  for t in thread_cache:
-    t._update()
+  try:
+    tmp_thread_list = [gdb.parse_and_eval('rlist.r_newer')]
+    while True:
+      tp = tmp_thread_list[-1].dereference()['p_newer']
+      if (tp == tmp_thread_list[0]) or (tp.dereference()['p_ctx']['r13'] == 0):
+        break
+      tmp_thread_list.append(tp)
+    # Announce dead threads
+    for t in thread_cache:
+      t._update()
+  except:
+    print("Warning: Failed to update thread cache.")
+    return
+
   # Announce new threads, we compare by str(tp) because gdb.Values are different
   old_thread_set = set(str(t.tp) for t in thread_cache)
   for t in tmp_thread_list:
@@ -132,7 +137,6 @@ def stop_handler(event=None):
       ct = ChibiThread(t)
       thread_cache.append(ct)
       print("[New thread '%s']" % ct.name)
-  set_cpu_regs(reg_cache)
 
 gdb.events.stop.connect(stop_handler)
 
