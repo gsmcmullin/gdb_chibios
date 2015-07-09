@@ -87,7 +87,7 @@ def set_cpu_regs(regs):
   try:
     gdb.execute("set $xpsr = %d" % regs[16])
   except:
-    print("Failed to set xpsr")
+    print("Error: Failed to set xpsr")
 
   # Write stack pointer from $sp to $psp or $msp for it to take effect
   if regs[16] & 0xff:
@@ -108,8 +108,9 @@ def stop_handler(event=None):
   # Save register cache
   reg_cache = get_cpu_regs()
   try:
-    currp = gdb.parse_and_eval('currp')
+    currp = gdb.parse_and_eval('rlist.r_current')
   except:
+    print("Warning: Failed to read current thread pointer.");
     currp = None
     thread_cache = []
     return
